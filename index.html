@@ -963,9 +963,13 @@ async function loadGames(dateStr) {
     if (!res.ok) throw new Error(`API error ${res.status}`);
     const data = await res.json();
 
+    // Tier label fallback map in case API returns old cached data without tierLabel
+    const TIER_LABELS = { low: 'Low', mod: 'Moderate', high: 'High', severe: 'Severe', unknown: 'Unknown' };
+
     GAMES = (data.games || []).map(g => ({
       ...g,
-      tier: g.tier,
+      tier: g.tier || 'low',
+      tierLabel: g.tierLabel || TIER_LABELS[g.tier] || g.tier || 'Unknown',
     }));
 
     // Update alert banner
