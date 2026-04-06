@@ -963,13 +963,22 @@ async function loadGames(dateStr) {
     if (!res.ok) throw new Error(`API error ${res.status}`);
     const data = await res.json();
 
+    // Normalize tier key to match CSS class names regardless of API version
+    function normalizeTier(t) {
+      if (!t) return 'low';
+      const s = t.toLowerCase();
+      if (s === 'moderate') return 'mod';
+      if (s === 'low' || s === 'mod' || s === 'high' || s === 'severe') return s;
+      return 'low';
+    }
+
     // Tier label fallback map in case API returns old cached data without tierLabel
     const TIER_LABELS = { low: 'Low', mod: 'Moderate', high: 'High', severe: 'Severe', unknown: 'Unknown' };
 
     GAMES = (data.games || []).map(g => ({
       ...g,
-      tier: g.tier || 'low',
-      tierLabel: g.tierLabel || TIER_LABELS[g.tier] || g.tier || 'Unknown',
+      tier: normalizeTier(g.tier),
+      tierLabel: g.tierLabel || TIER_LABELS[normalizeTier(g.tier)] || 'Unknown',
     }));
 
     // Update alert banner
