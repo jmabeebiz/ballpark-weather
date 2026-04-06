@@ -75,7 +75,7 @@ function scoreTemp(fahrenheit) {
 function getRiskTier(score) {
   if (score <= 20) return { tier: 'low',      tierLabel: 'Low',      label: 'Play expected'    };
   if (score <= 40) return { tier: 'mod',      tierLabel: 'Moderate', label: 'Watch conditions' };
-  if (score <= 54) return { tier: 'high',     tierLabel: 'High',     label: 'Delay possible'   };
+  if (score <= 54) return { tier: 'high',     tierLabel: 'Elevated', label: 'Delay possible'   };
   if (score <= 69) return { tier: 'high',     tierLabel: 'High',     label: 'Delay likely'     };
   return           { tier: 'severe',          tierLabel: 'Severe',   label: 'Postponement likely' };
 }
