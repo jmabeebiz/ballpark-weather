@@ -729,79 +729,8 @@
 </footer>
 
 <script>
-// ── Game data ──────────────────────────────────────────────────────────────────
-const GAMES = [
-  {
-    away: 'NYM', awayFull: 'Mets',
-    home: 'PHI', homeFull: 'Phillies',
-    time: '3:05 PM ET',
-    venue: 'Citizens Bank Park · Philadelphia, PA',
-    tags: ['Open air', 'Thunderstorms'],
-    wx: { rain: '100%', temp: '65°', wind: '15 mph' },
-    score: 87, tier: 'severe', tierLabel: 'Severe', sublabel: 'Postponement',
-    sustained: 'Rain all game',
-  },
-  {
-    away: 'BOS', awayFull: 'Red Sox',
-    home: 'NYY', homeFull: 'Yankees',
-    time: '1:05 PM ET',
-    venue: 'Yankee Stadium · Bronx, NY',
-    tags: ['Open air', 'Rain clearing'],
-    wx: { rain: '75%', temp: '58°', wind: '20 mph' },
-    score: 61, tier: 'high', tierLabel: 'High', sublabel: 'Delay likely',
-    sustained: null,
-  },
-  {
-    away: 'ATL', awayFull: 'Braves',
-    home: 'MIA', homeFull: 'Marlins',
-    time: '1:40 PM ET',
-    venue: 'loanDepot Park · Miami, FL',
-    tags: ['Retractable roof'],
-    wx: { rain: '55%', temp: '78°', wind: '10 mph' },
-    score: 26, tier: 'mod', tierLabel: 'Moderate', sublabel: 'Watch conditions',
-    sustained: null,
-  },
-  {
-    away: 'OAK', awayFull: 'Athletics',
-    home: 'SEA', homeFull: 'Mariners',
-    time: '4:10 PM PT',
-    venue: 'T-Mobile Park · Seattle, WA',
-    tags: ['Retractable roof'],
-    wx: { rain: '60%', temp: '52°', wind: '12 mph' },
-    score: 24, tier: 'mod', tierLabel: 'Moderate', sublabel: 'Watch conditions',
-    sustained: null,
-  },
-  {
-    away: 'CHC', awayFull: 'Cubs',
-    home: 'STL', homeFull: 'Cardinals',
-    time: '2:15 PM ET',
-    venue: 'Busch Stadium · St. Louis, MO',
-    tags: ['Open air'],
-    wx: { rain: '5%', temp: '72°', wind: '8 mph' },
-    score: 8, tier: 'low', tierLabel: 'Low', sublabel: 'Play expected',
-    sustained: null,
-  },
-  {
-    away: 'LAD', awayFull: 'Dodgers',
-    home: 'SF', homeFull: 'Giants',
-    time: '4:05 PM PT',
-    venue: 'Oracle Park · San Francisco, CA',
-    tags: ['Open air'],
-    wx: { rain: '10%', temp: '62°', wind: '14 mph' },
-    score: 12, tier: 'low', tierLabel: 'Low', sublabel: 'Play expected',
-    sustained: null,
-  },
-  {
-    away: 'HOU', awayFull: 'Astros',
-    home: 'TEX', homeFull: 'Rangers',
-    time: '7:05 PM CT',
-    venue: 'Globe Life Field · Arlington, TX',
-    tags: ['Retractable roof'],
-    wx: { rain: '0%', temp: '81°', wind: '9 mph' },
-    score: 0, tier: 'low', tierLabel: 'Low', sublabel: 'Play expected',
-    sustained: null,
-  },
-];
+// ── Game data (loaded from API) ───────────────────────────────────────────────
+let GAMES = [];
 
 // ── State ──────────────────────────────────────────────────────────────────────
 let currentView    = 'list';
