@@ -41,7 +41,7 @@ const BALLPARKS = {
   WSH: { name: 'Nationals Park',           city: 'Washington, DC',    lat: 38.8730, lon: -77.0074  },
 };
 
-// MLB team ID -> abbreviation map
+// MLB team ID -> abbreviation map (verified from MLB Stats API)
 const TEAM_ID_TO_ABBR = {
   109: 'ARI', 144: 'ATL', 110: 'BAL', 111: 'BOS', 112: 'CHC',
   145: 'CWS', 113: 'CIN', 114: 'CLE', 115: 'COL', 116: 'DET',
@@ -50,6 +50,42 @@ const TEAM_ID_TO_ABBR = {
   143: 'PHI', 134: 'PIT', 135: 'SD',  137: 'SF',  136: 'SEA',
   138: 'STL', 139: 'TB',  140: 'TEX', 141: 'TOR', 120: 'WSH',
 };
+
+// Fallback: build abbreviation from team name if ID not in map
+function getAbbrFromName(name = '') {
+  const n = name.toUpperCase();
+  if (n.includes('ARIZONA'))       return 'ARI';
+  if (n.includes('ATLANTA'))       return 'ATL';
+  if (n.includes('BALTIMORE'))     return 'BAL';
+  if (n.includes('BOSTON'))        return 'BOS';
+  if (n.includes('CUBS'))          return 'CHC';
+  if (n.includes('WHITE SOX'))     return 'CWS';
+  if (n.includes('CINCINNATI'))    return 'CIN';
+  if (n.includes('CLEVELAND'))     return 'CLE';
+  if (n.includes('COLORADO'))      return 'COL';
+  if (n.includes('DETROIT'))       return 'DET';
+  if (n.includes('HOUSTON'))       return 'HOU';
+  if (n.includes('KANSAS CITY'))   return 'KC';
+  if (n.includes('ANGELS'))        return 'LAA';
+  if (n.includes('DODGERS'))       return 'LAD';
+  if (n.includes('MIAMI') || n.includes('MARLINS')) return 'MIA';
+  if (n.includes('MILWAUKEE'))     return 'MIL';
+  if (n.includes('MINNESOTA'))     return 'MIN';
+  if (n.includes('METS'))          return 'NYM';
+  if (n.includes('YANKEES'))       return 'NYY';
+  if (n.includes('ATHLETICS'))     return 'OAK';
+  if (n.includes('PHILADELPHIA') || n.includes('PHILLIES')) return 'PHI';
+  if (n.includes('PITTSBURGH') || n.includes('PIRATES'))    return 'PIT';
+  if (n.includes('SAN DIEGO') || n.includes('PADRES'))      return 'SD';
+  if (n.includes('SAN FRANCISCO') || n.includes('GIANTS'))  return 'SF';
+  if (n.includes('SEATTLE') || n.includes('MARINERS'))      return 'SEA';
+  if (n.includes('ST. LOUIS') || n.includes('CARDINALS'))   return 'STL';
+  if (n.includes('TAMPA BAY') || n.includes('RAYS'))        return 'TB';
+  if (n.includes('TEXAS') || n.includes('RANGERS'))         return 'TEX';
+  if (n.includes('TORONTO') || n.includes('BLUE JAYS'))     return 'TOR';
+  if (n.includes('WASHINGTON') || n.includes('NATIONALS'))  return 'WSH';
+  return null;
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -99,11 +135,16 @@ async function fetchSchedule(date) {
   for (const dateObj of (data.dates || [])) {
     for (const g of (dateObj.games || [])) {
       if (g.status?.abstractGameState === 'Final') continue; // skip completed games
-      const homeId = g.teams?.home?.team?.id;
-      const awayId = g.teams?.away?.team?.id;
-      const homeAbbr = TEAM_ID_TO_ABBR[homeId];
-      const awayAbbr = TEAM_ID_TO_ABBR[awayId];
-      if (!homeAbbr || !awayAbbr) continue;
+      const homeId   = g.teams?.home?.team?.id;
+      const awayId   = g.teams?.away?.team?.id;
+      const homeName = g.teams?.home?.team?.name ?? '';
+      const awayName = g.teams?.away?.team?.name ?? '';
+      const homeAbbr = TEAM_ID_TO_ABBR[homeId] ?? getAbbrFromName(homeName);
+      const awayAbbr = TEAM_ID_TO_ABBR[awayId] ?? getAbbrFromName(awayName);
+      if (!homeAbbr || !awayAbbr) {
+        console.warn('Unknown team IDs:', awayId, awayName, 'vs', homeId, homeName);
+        continue;
+      }
       games.push({
         gamePk:       g.gamePk,
         homeAbbr,
