@@ -5,7 +5,22 @@
  * pulls hourly weather from Visual Crossing, scores each game.
  */
 
-const { calculateRainoutRisk, ROOF_TYPE } = require('../lib/rainout-risk');
+const { calculateRainoutRisk, getRoofType, ROOF_TYPE } = require('../lib/rainout-risk');
+
+// ── In-memory cache (persists across requests on same Vercel instance) ────────
+const cache = new Map();
+const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
+
+function getCached(key) {
+  const entry = cache.get(key);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > CACHE_TTL_MS) { cache.delete(key); return null; }
+  return entry.data;
+}
+
+function setCached(key, data) {
+  cache.set(key, { data, ts: Date.now() });
+}
 
 // ── Ballpark coordinates and metadata ────────────────────────────────────────
 const BALLPARKS = {
@@ -244,12 +259,31 @@ function scoreGame(game, weatherData, ballpark) {
       wind:  `${Math.round(weather.windSpeed)} mph`,
     },
     score:       result.score,
-    tier:        result.tier.toLowerCase(),
-    tierLabel:   result.tier,
+    tier:        result.tier,
+    tierLabel:   result.tierLabel,
     sublabel:    result.label,
     sustained:   result.sustained && result.score >= 70 ? 'Rain all game' : null,
     status:      game.status,
   };
+}
+
+function getRoofTypeStr(homeTeam) {
+  return getRoofType(homeTeam);
+}
+
+function formatGameTime(game, ballpark) {
+  const tz = tzForCity(ballpark.city);
+  const dtLocal = game.gameDateTime
+    ? new Date(game.gameDateTime).toLocaleTimeString('en-US', {
+        timeZone: tz, hour: 'numeric', minute: '2-digit', hour12: true,
+      })
+    : 'TBD';
+  const tzLabel = tz.includes('Los_Angeles') ? 'PT'
+    : tz.includes('Chicago') ? 'CT'
+    : tz.includes('Phoenix') ? 'MT'
+    : tz.includes('Toronto') ? 'ET'
+    : 'ET';
+  return `${dtLocal} ${tzLabel}`;
 }
 
 function buildTags(roofType, condition) {
@@ -276,7 +310,15 @@ module.exports = async function handler(req, res) {
     const apiKey = process.env.VISUAL_CROSSING_API_KEY;
     if (!apiKey) throw new Error('Missing VISUAL_CROSSING_API_KEY');
 
-    const date  = req.query.date || todayEST();
+    const date      = req.query.date || todayEST();
+    const cacheKey  = `games-${date}`;
+    const cached    = getCached(cacheKey);
+
+    if (cached) {
+      console.log(`Cache hit for ${date}`);
+      return res.status(200).json(cached);
+    }
+
     const rawSchedule = await fetchRawSchedule(date);
     const allGames = rawSchedule?.dates?.[0]?.games ?? [];
     
@@ -300,23 +342,47 @@ module.exports = async function handler(req, res) {
     const uniqueTeams = [...new Set(games.map(g => g.homeAbbr))];
     const weatherMap  = {};
 
-    await Promise.all(uniqueTeams.map(async abbr => {
+    // Fetch weather sequentially to avoid rate limiting
+    for (const abbr of uniqueTeams) {
       const bp = BALLPARKS[abbr];
-      if (!bp) return;
+      if (!bp) continue;
       try {
         weatherMap[abbr] = await fetchWeather(bp.lat, bp.lon, date, apiKey);
       } catch (e) {
         console.error(`Weather fetch failed for ${abbr}:`, e.message);
-        weatherMap[abbr] = null;
+        // Use a neutral default so the game still shows rather than disappearing
+        weatherMap[abbr] = 'unavailable';
       }
-    }));
+    }
 
     const scored = games
       .map(game => {
         const bp = BALLPARKS[game.homeAbbr];
-        if (!bp || !weatherMap[game.homeAbbr]) return null;
+        if (!bp) return null;
+        const wx = weatherMap[game.homeAbbr];
         try {
-          return scoreGame(game, weatherMap[game.homeAbbr], bp);
+          if (!wx || wx === 'unavailable') {
+            // Return game with unknown weather — still shows on page
+            return {
+              gamePk:    game.gamePk,
+              away:      game.awayAbbr,
+              awayFull:  game.awayFull,
+              home:      game.homeAbbr,
+              homeFull:  game.homeFull,
+              time:      formatGameTime(game, bp),
+              venue:     `${bp.name} · ${bp.city}`,
+              roofType:  getRoofTypeStr(game.homeAbbr),
+              tags:      buildTags(getRoofTypeStr(game.homeAbbr), ''),
+              wx:        { rain: '--', temp: '--', wind: '--' },
+              score:     null,
+              tier:      'unknown',
+              tierLabel: 'Unknown',
+              sublabel:  'Weather unavailable',
+              sustained: null,
+              status:    game.status,
+            };
+          }
+          return scoreGame(game, wx, bp);
         } catch (e) {
           console.error(`Scoring failed for ${game.homeAbbr}:`, e.message);
           return null;
@@ -325,7 +391,9 @@ module.exports = async function handler(req, res) {
       .filter(Boolean)
       .sort((a, b) => b.score - a.score); // highest risk first
 
-    return res.status(200).json({ date, games: scored, count: scored.length });
+    const result = { date, games: scored, count: scored.length };
+    setCached(cacheKey, result);
+    return res.status(200).json(result);
 
   } catch (err) {
     console.error('Handler error:', err);
