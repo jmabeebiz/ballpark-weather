@@ -438,7 +438,7 @@
   }
 
   .game-time   { font-size: 14px; font-weight: 500; }
-  .game-venue  { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .game-venue  { font-size: 12px; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
 
   .game-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 2px; }
 
@@ -610,21 +610,71 @@
 
   .footer-copy { font-size: 12px; color: var(--ink-4); }
 
-  .footer-links { display: flex; gap: 16px; }
+  .footer-links { display: flex; gap: 16px; flex-wrap: wrap; }
   .footer-links a { font-size: 12px; color: var(--ink-3); text-decoration: none; font-weight: 500; }
   .footer-links a:hover { color: var(--ink); }
 
   /* ── Responsive ── */
   @media (max-width: 640px) {
-    .weather-summary { display: none; }
-    .card-divider    { display: none; }
-    .matchup         { min-width: unset; }
-    .card-main       { gap: 12px; }
-    .card-risk-list  { min-width: 90px; padding: 12px; }
-    .risk-num        { font-size: 26px; }
-    .page-head-inner { flex-direction: column; align-items: flex-start; gap: 6px; }
-    .header-date     { display: none; }
-    .view-toggle     { display: none; }
+    /* Header */
+    .header-date  { display: none; }
+    .view-toggle  { display: none; }
+    .nav-link     { font-size: 12px; }
+
+    /* Page head */
+    .page-head         { padding: 20px 0 16px; }
+    .page-head-inner   { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .page-title        { font-size: 26px; }
+    .live-badge        { font-size: 11px; }
+
+    /* Controls */
+    .controls-inner    { padding: 0 12px; }
+    .date-tabs         { margin-right: 10px; padding-right: 10px; }
+    .date-tab          { padding: 8px 10px; }
+    .date-tab-num      { font-size: 16px; }
+    .team-filter       { padding: 8px 0; gap: 4px; }
+    .filter-label      { display: none; }
+    .team-btn          { font-size: 11px; padding: 3px 8px; }
+
+    /* Cards */
+    .games-wrap        { padding: 16px 0 40px; }
+    .container         { padding: 0 12px; }
+    .card-main         { padding: 12px; gap: 10px; flex-wrap: nowrap; }
+    .card-divider      { display: none; }
+    .matchup           { min-width: 90px; flex-shrink: 0; }
+    .team-abbr         { font-size: 13px; }
+    .team-full         { font-size: 10px; }
+
+    /* Game details — prevent time wrapping */
+    .game-details      { min-width: 0; flex: 1; }
+    .game-time         { font-size: 13px; white-space: nowrap; }
+    .game-venue        { font-size: 11px; white-space: normal; overflow: visible; text-overflow: unset; line-height: 1.3; }
+    .game-tag          { font-size: 9px; padding: 2px 5px; }
+
+    /* Weather — show all 3 stats compactly on mobile */
+    .weather-summary   { flex-direction: column; gap: 1px; margin-left: 0; flex-shrink: 0; }
+    .wx-stat           { flex-direction: row; gap: 4px; align-items: center; }
+    .wx-val            { font-size: 11px; }
+    .wx-key            { font-size: 9px; }
+
+    /* Risk panel */
+    .card-risk-list    { width: 80px; padding: 10px 8px; }
+    .risk-num          { font-size: 24px; }
+    .risk-tier-label   { font-size: 10px; }
+    .risk-sublabel     { font-size: 9px; white-space: normal; text-align: center; line-height: 1.2; }
+    .sustained-flag    { display: none; }
+
+    /* Footer */
+    .footer-inner      { flex-direction: column; gap: 8px; align-items: flex-start; }
+    .footer-links      { gap: 12px; }
+    .footer-copy       { font-size: 11px; }
+    .footer-links a    { font-size: 11px; }
+
+    /* Alert strip */
+    .alert-strip-inner { font-size: 12px; padding: 8px 12px; }
+
+    /* Games meta */
+    .games-meta        { margin-bottom: 10px; }
   }
 </style>
 </head>
@@ -638,8 +688,8 @@
       <span class="logo-text">Ballpark Weather</span>
     </a>
     <div class="header-right">
-      <a class="nav-link" href="how-it-works.html">How it works</a>
-<a class="nav-link" href="about.html">About</a>
+      <a class="nav-link" href="#">How it works</a>
+      <a class="nav-link" href="#">About</a>
       <span class="header-date" id="header-date"></span>
     </div>
   </div>
@@ -719,8 +769,8 @@
   <div class="footer-inner">
     <span class="footer-copy">© 2026 Ballpark Weather · Weather data updated hourly</span>
     <div class="footer-links">
-      <a class="nav-link" href="how-it-works.html">How it works</a>
-<a class="nav-link" href="about.html">About</a>
+      <a href="#">How it works</a>
+      <a href="#">About</a>
       <a href="feedback.html">Feedback</a>
       <a href="https://buymeacoffee.com/justinmabee" target="_blank" rel="noopener">Buy me a coffee</a>
     </div>
