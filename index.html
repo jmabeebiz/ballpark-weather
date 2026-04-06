@@ -965,7 +965,7 @@ async function loadGames(dateStr) {
 
     GAMES = (data.games || []).map(g => ({
       ...g,
-      tier: g.tier?.toLowerCase(),
+      tier: g.tier,
     }));
 
     // Update alert banner
