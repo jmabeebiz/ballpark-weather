@@ -1,0 +1,6 @@
+{
+  "name": "ballpark-weather",
+  "version": "1.0.0",
+  "description": "Rainout risk scores for every MLB game.",
+  "engines": { "node": "18.x" }
+}

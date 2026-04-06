@@ -832,14 +832,19 @@ function buildDateTabs() {
 
     const btn = document.createElement('button');
     btn.className = 'date-tab' + (i === 0 ? ' active' : '');
+    const yyyy = d.getFullYear();
+    const mm   = String(d.getMonth()+1).padStart(2,'0');
+    const dd   = String(d.getDate()).padStart(2,'0');
+    btn.dataset.date = `${yyyy}-${mm}-${dd}`;
     btn.innerHTML = `
       <span class="date-tab-dow">${i === 0 ? 'Today' : DAYS[d.getDay()]}</span>
       <span class="date-tab-num">${d.getDate()}</span>
-      <span class="date-tab-count">${GAME_COUNTS[i]}</span>
+      <span class="date-tab-count"></span>
     `;
     btn.addEventListener('click', function() {
       document.querySelectorAll('.date-tab').forEach(t => t.classList.remove('active'));
       this.classList.add('active');
+      loadGames(this.dataset.date);
     });
     container.appendChild(btn);
   }
@@ -955,9 +960,60 @@ function filterTeam(btn, team) {
   renderGames();
 }
 
+// ── Loading state ─────────────────────────────────────────────────────────────
+function showLoading() {
+  document.getElementById('games-container').innerHTML = `
+    <div style="padding:60px 0;text-align:center;color:var(--ink-3);font-size:14px;">
+      Loading today's games...
+    </div>`;
+  document.getElementById('game-count').textContent = '';
+}
+
+function showError(msg) {
+  document.getElementById('games-container').innerHTML = `
+    <div style="padding:60px 0;text-align:center;color:var(--severe);font-size:14px;">
+      ${msg}
+    </div>`;
+}
+
+// ── Fetch games from API ───────────────────────────────────────────────────────
+async function loadGames(dateStr) {
+  showLoading();
+  try {
+    const url = dateStr ? `/api/games?date=${dateStr}` : '/api/games';
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error(`API error ${res.status}`);
+    const data = await res.json();
+
+    GAMES = (data.games || []).map(g => ({
+      ...g,
+      tier: g.tier?.toLowerCase(),
+    }));
+
+    // Update alert banner
+    const severeGames = GAMES.filter(g => g.tier === 'severe');
+    const alertStrip  = document.querySelector('.alert-strip');
+    if (alertStrip) {
+      if (severeGames.length) {
+        const g = severeGames[0];
+        alertStrip.style.display = '';
+        alertStrip.querySelector('.alert-strip-inner span:last-child').innerHTML =
+          `<strong>${g.away} vs ${g.home}</strong> — ${g.time} at ${g.venue.split(' · ')[0]} is at high postponement risk.`;
+      } else {
+        alertStrip.style.display = 'none';
+      }
+    }
+
+    renderGames();
+  } catch (err) {
+    console.error(err);
+    showError('Could not load games. Please try again shortly.');
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────────
 buildDateTabs();
-renderGames();
+loadGames();
 </script>
 </body>
 </html>
