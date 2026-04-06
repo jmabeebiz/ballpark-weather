@@ -311,7 +311,7 @@ module.exports = async function handler(req, res) {
     if (!apiKey) throw new Error('Missing VISUAL_CROSSING_API_KEY');
 
     const date      = req.query.date || todayEST();
-    const cacheKey  = `games-v3-${date}`; // bumped to bust old cache
+    const cacheKey  = `games-v4-${date}`; // bumped to bust old cache
     const cached    = getCached(cacheKey);
 
     if (cached) {
