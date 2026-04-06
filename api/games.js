@@ -126,6 +126,13 @@ function conditionFromIcon(icon = '') {
 
 // ── MLB Schedule fetch ────────────────────────────────────────────────────────
 
+async function fetchRawSchedule(date) {
+  const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=team,venue,game(content(summary))`;
+  const res  = await fetch(url);
+  if (!res.ok) throw new Error(`MLB API error: ${res.status}`);
+  return res.json();
+}
+
 async function fetchSchedule(date) {
   const url = `https://statsapi.mlb.com/api/v1/schedule?sportId=1&date=${date}&hydrate=team,venue,game(content(summary))`;
   const res  = await fetch(url);
@@ -270,6 +277,19 @@ module.exports = async function handler(req, res) {
     if (!apiKey) throw new Error('Missing VISUAL_CROSSING_API_KEY');
 
     const date  = req.query.date || todayEST();
+    const rawSchedule = await fetchRawSchedule(date);
+    const allGames = rawSchedule?.dates?.[0]?.games ?? [];
+    
+    console.log('Raw MLB games count:', allGames.length);
+    allGames.forEach(g => {
+      const homeId = g.teams?.home?.team?.id;
+      const awayId = g.teams?.away?.team?.id;
+      const homeName = g.teams?.home?.team?.name;
+      const awayName = g.teams?.away?.team?.name;
+      const state = g.status?.abstractGameState;
+      console.log(`  ${awayId} ${awayName} @ ${homeId} ${homeName} [${state}]`);
+    });
+
     const games = await fetchSchedule(date);
 
     if (!games.length) {
